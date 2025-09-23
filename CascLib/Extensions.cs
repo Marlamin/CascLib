@@ -104,7 +104,7 @@ namespace CASCLib
 
             //return result;
 
-            Span<T> result = MemoryMarshal.Cast<byte, T>(src);
+            ReadOnlySpan<T> result = MemoryMarshal.Cast<byte, T>(src);
             return result.ToArray();
         }
 
