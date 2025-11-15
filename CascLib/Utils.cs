@@ -28,8 +28,10 @@ namespace CASCLib
             }
         }
 
-        private static HttpWebResponse HttpWebResponse(string url, string method = "GET", int? from = null, int? to = null, int numRetries = 0)
+        private static HttpWebResponse HttpWebResponse(Func<string> getUrlFunc, string method = "GET", int? from = null, int? to = null, int numRetries = 0)
         {
+            string url = getUrlFunc();
+
             if (numRetries >= 5)
             {
                 string message = $"Utils: HttpWebResponse for {url} failed after 5 tries";
@@ -60,7 +62,7 @@ namespace CASCLib
                 {
                     if (exc.Status == WebExceptionStatus.ProtocolError && (resp.StatusCode == HttpStatusCode.NotFound || resp.StatusCode == (HttpStatusCode)429))
                     {
-                        return HttpWebResponse(url, method, from, to, numRetries + 1);
+                        return HttpWebResponse(getUrlFunc, method, from, to, numRetries + 1);
                     }
                     else
                     {
@@ -72,19 +74,19 @@ namespace CASCLib
             }
         }
 
-        public static HttpWebResponse HttpWebResponseHead(string url)
+        public static HttpWebResponse HttpWebResponseHead(Func<string> getUrlFunc)
         {
-            return HttpWebResponse(url, "HEAD");
+            return HttpWebResponse(getUrlFunc, "HEAD");
         }
 
-        public static HttpWebResponse HttpWebResponseGet(string url)
+        public static HttpWebResponse HttpWebResponseGet(Func<string> getUrlFunc)
         {
-            return HttpWebResponse(url, "GET");
+            return HttpWebResponse(getUrlFunc, "GET");
         }
 
-        public static HttpWebResponse HttpWebResponseGetWithRange(string url, int from, int to)
+        public static HttpWebResponse HttpWebResponseGetWithRange(Func<string> getUrlFunc, int from, int to)
         {
-            return HttpWebResponse(url, "GET", from, to);
+            return HttpWebResponse(getUrlFunc, "GET", from, to);
         }
 
         // copies whole stream
@@ -114,12 +116,12 @@ namespace CASCLib
             return ms;
         }
 
-        public static long GetFileSize(string url)
-        {
-            using (var resp = Utils.HttpWebResponseHead(url))
-            {
-                return resp.ContentLength;
-            }
-        }
+        //public static long GetFileSize(string url)
+        //{
+        //    using (var resp = Utils.HttpWebResponseHead(url))
+        //    {
+        //        return resp.ContentLength;
+        //    }
+        //}
     }
 }

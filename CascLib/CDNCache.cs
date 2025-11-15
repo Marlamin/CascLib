@@ -215,9 +215,7 @@ namespace CASCLib
 
         private bool DownloadFile(string cdnPath, string path)
         {
-            string url = Utils.MakeCDNUrl(_config.CDNHost, cdnPath);
-
-            Logger.WriteLine($"CDNCache: downloading file {url} to {path}");
+            Logger.WriteLine($"CDNCache: downloading file {cdnPath} to {path}");
 
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
@@ -238,7 +236,7 @@ namespace CASCLib
 
             try
             {
-                using (var resp = Utils.HttpWebResponseGet(url))
+                using (var resp = Utils.HttpWebResponseGet(() => Utils.MakeCDNUrl(_config.CDNHost, cdnPath)))
                 {
                     CacheMetaData meta;
                     using (Stream stream = resp.GetResponseStream())
@@ -254,7 +252,7 @@ namespace CASCLib
             catch (WebException exc)
             {
                 var resp = (HttpWebResponse)exc.Response;
-                Logger.WriteLine($"CDNCache: error while downloading {url}: Status {exc.Status}, StatusCode {resp?.StatusCode}");
+                Logger.WriteLine($"CDNCache: error while downloading {cdnPath}: Status {exc.Status}, StatusCode {resp?.StatusCode}");
                 return false;
             }
 
@@ -262,18 +260,16 @@ namespace CASCLib
             CDNCacheStats.timeSpentDownloading += timeSpent;
             CDNCacheStats.numFilesDownloaded++;
 
-            Logger.WriteLine($"CDNCache: {url} has been downloaded, spent {timeSpent}");
+            Logger.WriteLine($"CDNCache: {cdnPath} has been downloaded, spent {timeSpent}");
 
             return true;
         }
 
         private CacheMetaData GetMetaData(string cdnPath, string fileName)
         {
-            string url = Utils.MakeCDNUrl(_config.CDNHost, cdnPath);
-
             try
             {
-                using (var resp = Utils.HttpWebResponseHead(url))
+                using (var resp = Utils.HttpWebResponseHead(() => Utils.MakeCDNUrl(_config.CDNHost, cdnPath)))
                 {
                     return CacheFile(resp, fileName);
                 }
@@ -281,7 +277,7 @@ namespace CASCLib
             catch (WebException exc)
             {
                 var resp = (HttpWebResponse)exc.Response;
-                Logger.WriteLine($"CDNCache: error at GetMetaData {url}: Status {exc.Status}, StatusCode {resp.StatusCode}");
+                Logger.WriteLine($"CDNCache: error at GetMetaData {cdnPath}: Status {exc.Status}, StatusCode {resp.StatusCode}");
                 return null;
             }
         }

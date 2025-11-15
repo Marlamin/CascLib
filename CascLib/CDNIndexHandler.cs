@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Net;
 //using System.Net.Http;
@@ -83,11 +84,9 @@ namespace CASCLib
             //    return ms;
             //}
 
-            string url = Utils.MakeCDNUrl(config.CDNHost, file);
-
             try
             {
-                using (var resp = Utils.HttpWebResponseGetWithRange(url, entry.Offset, entry.Offset + entry.Size - 1))
+                using (var resp = Utils.HttpWebResponseGetWithRange(() => Utils.MakeCDNUrl(config.CDNHost, file), entry.Offset, entry.Offset + entry.Size - 1))
                 using (Stream rstream = resp.GetResponseStream())
                 {
                     return rstream.CopyBytesToMemoryStream(entry.Size);
@@ -96,7 +95,7 @@ namespace CASCLib
             catch (WebException exc)
             {
                 var resp = (HttpWebResponse)exc.Response;
-                Logger.WriteLine($"CDNIndexHandler: error while opening {url}: Status {exc.Status}, StatusCode {resp?.StatusCode}");
+                Logger.WriteLine($"CDNIndexHandler: error while opening {file}: Status {exc.Status}, StatusCode {resp?.StatusCode}");
                 return null;
             }
         }
@@ -114,9 +113,7 @@ namespace CASCLib
             if (stream != null)
                 return stream;
 
-            string url = Utils.MakeCDNUrl(config.CDNHost, file);
-
-            return OpenFile(url);
+            return OpenFile(() => Utils.MakeCDNUrl(config.CDNHost, file));
         }
 
         public static Stream OpenConfigFileDirect(CASCConfig cfg, string key)
@@ -128,12 +125,10 @@ namespace CASCLib
             if (stream != null)
                 return stream;
 
-            string url = Utils.MakeCDNUrl(cfg.CDNHost, file);
-
-            return OpenFileDirect(url);
+            return OpenFileDirect(() => Utils.MakeCDNUrl(cfg.CDNHost, file));
         }
 
-        public static Stream OpenFileDirect(string url)
+        public static Stream OpenFileDirect(Func<string> getUrlFunc)
         {
             //using (HttpClient client = new HttpClient())
             //{
@@ -145,7 +140,7 @@ namespace CASCLib
             //    return ms;
             //}
 
-            using (var resp = Utils.HttpWebResponseGet(url))
+            using (var resp = Utils.HttpWebResponseGet(getUrlFunc))
             using (Stream stream = resp.GetResponseStream())
             {
                 return stream.CopyToMemoryStream(resp.ContentLength);

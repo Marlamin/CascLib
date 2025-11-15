@@ -167,9 +167,7 @@ namespace CASCLib
                 }
                 else
                 {
-                    string url = Utils.MakeCDNUrl(config.CDNHost, file);
-
-                    using (var fs = OpenFile(url))
+                    using (var fs = OpenFile(() => Utils.MakeCDNUrl(config.CDNHost, file)))
                         ParseIndex(fs, dataIndex);
                 }
             }
@@ -203,9 +201,9 @@ namespace CASCLib
             }
         }
 
-        protected Stream OpenFile(string url)
+        protected Stream OpenFile(Func<string> getUrlFunc)
         {
-            using (var resp = Utils.HttpWebResponseGet(url))
+            using (var resp = Utils.HttpWebResponseGet(getUrlFunc))
             using (Stream stream = resp.GetResponseStream())
             {
                 return stream.CopyToMemoryStream(resp.ContentLength);
